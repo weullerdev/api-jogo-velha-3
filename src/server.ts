@@ -16,6 +16,7 @@ interface Game {
   value: SquareGame[]
   playerOne?: Player
   playerTwo?: Player
+  turn?: 'x' | 'o'
 }
 
 const app = express()
@@ -35,6 +36,7 @@ const io = new Server(server, { cors: { origin: '*' } })
 io.on('connection', (socket) => {
   socket.on('createGame', (element: 'x' | 'o') => {
     game.value = createGame()
+    game.turn = 'x'
     game.playerOne = {
       element,
       id: socket.id
@@ -45,8 +47,23 @@ io.on('connection', (socket) => {
     socket.to(code).emit('updateGame', game)
   })
 
-  socket.on('round', (currentGame) => {
+  socket.on('joinGame', (joinCode) => {
+    if(code === joinCode){
+      game.playerTwo = {
+        element: game.playerOne?.element === 'x' ? 'o' : 'x',
+        id: socket.id,
+      }
+      socket.emit('joinedGame', game.playerTwo.element)
+      socket.join(code)
+      socket.to(code).emit('updateGame', game)
+    } else {
+      socket.emit('errorCode')
+    }
+  })
+
+  socket.on('round', (currentGame, turn: 'x' | 'o') => {
     game.value = currentGame
+    game.turn = turn === 'x' ? 'o' : 'x'
     socket.to(code).emit('updateGame', game)
   })
 
