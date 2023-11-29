@@ -41,9 +41,9 @@ io.on('connection', (socket) => {
       element,
       id: socket.id
     }
-
+    
     socket.join(code)
-
+    
     socket.to(code).emit('updateGame', game)
   })
 
@@ -67,9 +67,9 @@ io.on('connection', (socket) => {
     socket.to(code).emit('updateGame', game)
   })
 
-  socket.on('endGame', (element: 'x' | 'o') => {
-    socket.to(code).emit('winner', element)
-  })
+  // socket.on('endGame', (element: 'x' | 'o') => {
+  //   socket.to(code).emit('winner', element)
+  // })
 
   socket.on('reset', () => {
     game.value = createGame()
