@@ -17,11 +17,16 @@ interface Game {
   playerOne?: Player
   playerTwo?: Player
   turn?: 'x' | 'o'
+  code: string
 }
 
 const app = express()
 
 const server = http.createServer(app)
+
+const generateCode = () => {
+
+}
 
 const createGame = () => {
   return [...Array(9)].map(i => ({ value: null }))
@@ -29,12 +34,20 @@ const createGame = () => {
 
 let game = {} as Game
 
-const code: string = 'asDSSQ' 
+let code: string = ''
 
 const io = new Server(server, { cors: { origin: '*' } })
 
 io.on('connection', (socket) => {
   socket.on('createGame', (element: 'x' | 'o') => {
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789'
+    const charLength = chars.length
+    
+    for ( let i = 0; i < 6; i++ ) {
+      game.code += chars.charAt(Math.floor(Math.random() * charLength));
+    }
+
     game.value = createGame()
     game.turn = 'x'
     game.playerOne = {
@@ -42,20 +55,22 @@ io.on('connection', (socket) => {
       id: socket.id
     }
     
-    socket.join(code)
+    socket.join(game.code)
     
-    socket.to(code).emit('updateGame', game)
+    socket.to(game.code).emit('updateGame', game)
+    socket.emit('getCode', game.code)
   })
 
+
   socket.on('joinGame', (joinCode) => {
-    if(code === joinCode){
+    if(game.code === joinCode){
       game.playerTwo = {
         element: game.playerOne?.element === 'x' ? 'o' : 'x',
         id: socket.id,
       }
       socket.emit('joinedGame', game.playerTwo.element)
-      socket.join(code)
-      socket.to(code).emit('updateGame', game)
+      socket.join(game.code)
+      socket.to(game.code).emit('updateGame', game)
     } else {
       socket.emit('errorCode')
     }
@@ -64,7 +79,7 @@ io.on('connection', (socket) => {
   socket.on('round', (currentGame, turn: 'x' | 'o') => {
     game.value = currentGame
     game.turn = turn === 'x' ? 'o' : 'x'
-    socket.to(code).emit('updateGame', game)
+    socket.to(game.code).emit('updateGame', game)
   })
 
   // socket.on('endGame', (element: 'x' | 'o') => {
@@ -73,7 +88,7 @@ io.on('connection', (socket) => {
 
   socket.on('reset', () => {
     game.value = createGame()
-    socket.to(code).emit('updateGame', game)
+    socket.to(game.code).emit('updateGame', game)
   })
 })
 
